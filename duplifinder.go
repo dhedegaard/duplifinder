@@ -11,6 +11,9 @@ import (
 	"strings"
 )
 
+// Defines the default number of bytes to hash when comparing files.
+const HASH_MAX = 1024 * 1024
+
 func log(msg ...interface{}) {
 	fmt.Fprintln(os.Stderr, msg)
 }
@@ -45,7 +48,7 @@ func stringInSlice(obj string, slice []string) bool {
 
 func hashFile(filename string) (result []byte, err error) {
 	// Initiate an empty buffer.
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, HASH_MAX)
 
 	// Open the file.
 	fd, err := os.Open(filename)
@@ -54,7 +57,7 @@ func hashFile(filename string) (result []byte, err error) {
 	}
 	defer fd.Close()
 
-	// Fetch up to the first 1024 bytes from the file descriptor.
+	// Fetch up to the first HASH_MAX bytes from the file descriptor.
 	_, err = fd.Read(buffer)
 	if err != nil {
 		return buffer, errors.New(fmt.Sprintf("Skipping: \"", filename, "\", unable to read."))
@@ -113,7 +116,7 @@ func main() {
 	}
 
 	// Hash all files with equal sizes, check for equal hashes means equal files.
-	hashing := make(map[[1024]byte][]string, 0)
+	hashing := make(map[[HASH_MAX]byte][]string, 0)
 	for _, filenames := range filesizes {
 		if len(filenames) < 2 {
 			continue
@@ -127,8 +130,8 @@ func main() {
 			}
 
 			// Convert slice to an array.
-			var hashedArray [1024]byte
-			copy(hashedArray[:], hashedSlice[0:1024])
+			var hashedArray [HASH_MAX]byte
+			copy(hashedArray[:], hashedSlice[0:HASH_MAX])
 
 			// Append it to the hashed result.
 			hashing[hashedArray] = append(hashing[hashedArray], filename)
@@ -146,7 +149,7 @@ func main() {
 			continue
 		}
 
-		fmt.Println("  [", filecount, "] ", strings.Join(filenames, ", "))
+		fmt.Printf("  [%d] \"%s\"\n", filecount, strings.Join(filenames, "\", \""))
 		totalcount++
 	}
 
